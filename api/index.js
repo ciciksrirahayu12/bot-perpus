@@ -1,7 +1,7 @@
 const { Telegraf } = require('telegraf');
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-const ADMIN_ID = 'ID_TELEGRAM_MU'; // Ganti dengan ID dari @userinfobot
+const ADMIN_ID = '8712077042'; // Ganti dengan ID dari @userinfobot
 const userState = {}; // Tempat menyimpan sementara jawaban user
 
 // 1. Perintah Start
