@@ -47,44 +47,41 @@ bot.on('text', async (ctx) => {
         await ctx.reply('Tuliskan Isi Pengaduan:');
         break;
 
-      case 5: // Simpan Isi -> Kirim ke Admin -> Tanya pengaduan lagi?
+      case 5:
         state.isi = msg;
+        const laporan = `📢 *PENGADUAN BARU*\n\n👤 Nama: ${state.nama}\n🆔 NIM: ${state.nim}\n📞 Kontak: ${state.kontak}\n📂 Jenis: ${state.jenis}\n📝 Isi: ${state.isi}`;
         
-        // Kirim Laporan ke Admin
-        const laporan = `📢 *PENGADUAN BARU*\n\n` +
-                        `👤 *Nama:* ${state.nama}\n` +
-                        `🆔 *NIM:* ${state.nim}\n` +
-                        `📞 *Kontak:* ${state.kontak}\n` +
-                        `📂 *Jenis:* ${state.jenis}\n` +
-                        `📝 *Isi:* ${state.isi}`;
-        
-        await ctx.telegram.sendMessage(ADMIN_ID, laporan, { parse_mode: 'Markdown' });
+        // Kirim ke Admin
+        await ctx.telegram.sendMessage(ADMIN_ID, laporan, { parse_mode: 'Markdown' }).catch(e => console.log("Gagal kirim admin"));
 
-        // JANGAN LANGSUNG DELETE, tapi tawarkan tombol
-        await ctx.reply('Pengaduan Anda sudah kami terima. Apakah ada pengaduan lagi?', {
+        // HAPUS STATE SEBELUM MENAMPILKAN TOMBOL
+        delete userState[userId]; 
+
+        return await ctx.reply('Pengaduan Anda sudah kami terima. Apakah ada pengaduan lagi?', {
           reply_markup: {
             inline_keyboard: [
-              [{ text: 'Ya, Buat Pengaduan Lagi', callback_data: 'ulang_pengaduan' }],
-              [{ text: 'Tidak, Terima Kasih', callback_data: 'selesai_pengaduan' }]
+              [
+                { text: 'Ya', callback_data: 'ulang' },
+                { text: 'Tidak', callback_data: 'selesai' }
+              ]
             ]
           }
         });
-        
-        // Tetap hapus state agar tidak nyangkut di step 5 jika user mengetik teks biasa
-        delete userState[userId]; 
-        break;
     }
   } catch (err) {
     console.error(err);
-    await ctx.reply('Maaf, terjadi kesalahan. Silakan ketik /start untuk mengulang.');
+    return ctx.reply('Maaf, ada gangguan. Ketik /start ya.');
   }
 });
 
-module.exports = async (req, res) => {
-  if (req.method === 'POST') {
-    await bot.handleUpdate(req.body);
-    res.status(200).send('OK');
-  } else {
-    res.status(200).send('Bot UNUJA Aktif!');
-  }
-};
+// --- TARUH DI SINI (DI LUAR bot.on) ---
+bot.action('ulang', async (ctx) => {
+  await ctx.answerCbQuery();
+  userState[ctx.from.id] = { step: 1 };
+  return ctx.reply('Sip! Ketik Nama Lengkap Anda:');
+});
+
+bot.action('selesai', async (ctx) => {
+  await ctx.answerCbQuery();
+  return ctx.editMessageText('Terima kasih! Laporan Anda sedang kami proses.');
+});
