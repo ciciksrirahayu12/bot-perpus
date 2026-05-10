@@ -1,51 +1,41 @@
-const { Telegraf } = require('telegraf');
-const bot = new Telegraf(process.env.BOT_TOKEN);
-
-const ADMIN_ID = 8712077042; // Ganti dengan ID dari @userinfobot
-const userState = {}; // Tempat menyimpan sementara jawaban user
-
-// 1. Perintah Start
-bot.start((ctx) => {
-  const userId = ctx.from.id;
-  userState[userId] = { step: 1 }; // Reset ke langkah pertama
-  ctx.reply('Selamat Datang di Bot Pengaduan Perpustakaan Universitas Nurul Jadid\n\nKetik Nama Lengkap Anda:');
-});
+// ... (bagian atas tetap sama)
 
 bot.on('text', async (ctx) => {
   const userId = ctx.from.id;
   const msg = ctx.message.text;
 
-  // Jika user tidak dalam proses mengisi formulir, abaikan atau beri info
-  if (!userState[userId]) return;
+  // 1. ABAIKAN JIKA ITU PERINTAH /START
+  if (msg.startsWith('/')) return;
+  
+  // 2. ABAIKAN JIKA USER TIDAK SEDANG DALAM SESI (Pencegahan Salbut)
+  if (!userState[userId]) {
+    return ctx.reply('Silakan ketik /start untuk memulai pengaduan.');
+  }
 
   const state = userState[userId];
 
   try {
     switch (state.step) {
-      case 1: // Simpan Nama -> Tanya NIM
+      case 1:
         state.nama = msg;
         state.step = 2;
-        await ctx.reply('Masukkan NIM atau (-) jika anda bukan mahasiswa:');
-        break;
+        return await ctx.reply('Masukkan NIM atau (-) jika anda bukan mahasiswa:');
 
-      case 2: // Simpan NIM -> Tanya Kontak
+      case 2:
         state.nim = msg;
         state.step = 3;
-        await ctx.reply('Tuliskan kontak yang dapat dihubungi\n(Whatsapp / Telegram / Email):');
-        break;
+        return await ctx.reply('Tuliskan kontak yang dapat dihubungi (WA/Tele/Email):');
 
-      case 3: // Simpan Kontak -> Tanya Jenis
+      case 3:
         state.kontak = msg;
         state.step = 4;
-        await ctx.reply('Jenis Pengaduan:\n1. Layanan\n2. Koleksi\n3. Fasilitas\n4. Sistem\n5. Lainnya\n\nKetik angka 1–5:');
-        break;
+        return await ctx.reply('Jenis Pengaduan:\n1. Layanan\n2. Koleksi\n3. Fasilitas\n4. Sistem\n5. Lainnya\n\nKetik angka 1–5:');
 
-      case 4: // Simpan Jenis -> Tanya Isi
+      case 4:
         const kategori = { '1': 'Layanan', '2': 'Koleksi', '3': 'Fasilitas', '4': 'Sistem', '5': 'Lainnya' };
         state.jenis = kategori[msg] || 'Lainnya';
         state.step = 5;
-        await ctx.reply('Tuliskan Isi Pengaduan:');
-        break;
+        return await ctx.reply('Tuliskan Isi Pengaduan:');
 
       case 5:
         state.isi = msg;
