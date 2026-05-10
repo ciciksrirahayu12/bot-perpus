@@ -1,53 +1,81 @@
 const { Telegraf } = require('telegraf');
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// GANTI dengan ID kamu dari @userinfobot
-const ADMIN_ID = '12345678'; 
+const ADMIN_ID = 'ID_TELEGRAM_MU'; // Ganti dengan ID dari @userinfobot
+const userState = {}; // Tempat menyimpan sementara jawaban user
 
 // 1. Perintah Start
 bot.start((ctx) => {
-  return ctx.reply('Halo! Selamat datang di Bot Pengaduan Perpustakaan. Silakan tulis laporan Anda di bawah ini.');
+  const userId = ctx.from.id;
+  userState[userId] = { step: 1 }; // Reset ke langkah pertama
+  ctx.reply('Selamat Datang di Bot Pengaduan Perpustakaan Universitas Nurul Jadid\n\nKetik Nama Lengkap Anda:');
 });
 
-// 2. Logika Menangkap Laporan (Hanya jika bukan perintah /)
 bot.on('text', async (ctx) => {
-  const pesanMasuk = ctx.message.text;
-  const chatId = ctx.chat.id.toString();
-  const pengirim = ctx.from.first_name;
-  const username = ctx.from.username ? `@${ctx.from.username}` : 'Tanpa Username';
+  const userId = ctx.from.id;
+  const msg = ctx.message.text;
 
-  // JANGAN proses jika ini adalah perintah (dimulai dengan /)
-  if (pesanMasuk.startsWith('/')) return;
+  // Jika user tidak dalam proses mengisi formulir, abaikan atau beri info
+  if (!userState[userId]) return;
 
-  // JANGAN proses jika ini adalah pesan yang dikirim di chat Admin (agar tidak looping)
-  if (chatId === ADMIN_ID) {
-    return ctx.reply('Sistem stand-by. Menunggu laporan masuk...');
-  }
+  const state = userState[userId];
 
   try {
-    // Balas ke User
-    await ctx.reply('Laporan Anda sudah kami terima. Terima kasih!');
+    switch (state.step) {
+      case 1: // Simpan Nama -> Tanya NIM
+        state.nama = msg;
+        state.step = 2;
+        await ctx.reply('Masukkan NIM atau (-) jika anda bukan mahasiswa:');
+        break;
 
-    // Kirim ke Admin
-    const teksUntukAdmin = `📢 *LAPORAN BARU*\n\n` +
-                           `👤 *Dari:* ${pengirim} (${username})\n` +
-                           `📝 *Isi:* ${pesanMasuk}`;
-    
-    await ctx.telegram.sendMessage(ADMIN_ID, teksUntukAdmin, { parse_mode: 'Markdown' });
+      case 2: // Simpan NIM -> Tanya Kontak
+        state.nim = msg;
+        state.step = 3;
+        await ctx.reply('Tuliskan kontak yang dapat dihubungi\n(Whatsapp / Telegram / Email):');
+        break;
+
+      case 3: // Simpan Kontak -> Tanya Jenis
+        state.kontak = msg;
+        state.step = 4;
+        await ctx.reply('Jenis Pengaduan:\n1. Layanan\n2. Koleksi\n3. Fasilitas\n4. Sistem\n5. Lainnya\n\nKetik angka 1–5:');
+        break;
+
+      case 4: // Simpan Jenis -> Tanya Isi
+        const kategori = { '1': 'Layanan', '2': 'Koleksi', '3': 'Fasilitas', '4': 'Sistem', '5': 'Lainnya' };
+        state.jenis = kategori[msg] || 'Lainnya';
+        state.step = 5;
+        await ctx.reply('Tuliskan Isi Pengaduan:');
+        break;
+
+      case 5: // Simpan Isi -> Kirim ke Admin -> Tanya pengaduan lagi?
+        state.isi = msg;
+        
+        // Kirim Laporan ke Admin
+        const laporan = `📢 *PENGADUAN BARU*\n\n` +
+                        `👤 *Nama:* ${state.nama}\n` +
+                        `🆔 *NIM:* ${state.nim}\n` +
+                        `📞 *Kontak:* ${state.kontak}\n` +
+                        `📂 *Jenis:* ${state.jenis}\n` +
+                        `📝 *Isi:* ${state.isi}`;
+        
+        await ctx.telegram.sendMessage(ADMIN_ID, laporan, { parse_mode: 'Markdown' });
+
+        // Selesai & Reset State
+        delete userState[userId]; 
+        await ctx.reply('Pengaduan Anda sudah kami terima, Apakah ada pengaduan lagi?\n\n(Ketik /start jika ingin mengadu lagi)');
+        break;
+    }
   } catch (err) {
-    console.error('Gagal kirim laporan:', err);
+    console.error(err);
+    await ctx.reply('Maaf, terjadi kesalahan. Silakan ketik /start untuk mengulang.');
   }
 });
 
 module.exports = async (req, res) => {
   if (req.method === 'POST') {
-    try {
-      await bot.handleUpdate(req.body);
-      res.status(200).send('OK');
-    } catch (err) {
-      res.status(500).send('Error');
-    }
+    await bot.handleUpdate(req.body);
+    res.status(200).send('OK');
   } else {
-    res.status(200).send('Bot Aktif!');
+    res.status(200).send('Bot UNUJA Aktif!');
   }
 };
