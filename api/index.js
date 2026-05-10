@@ -60,9 +60,18 @@ bot.on('text', async (ctx) => {
         
         await ctx.telegram.sendMessage(ADMIN_ID, laporan, { parse_mode: 'Markdown' });
 
-        // Selesai & Reset State
+        // JANGAN LANGSUNG DELETE, tapi tawarkan tombol
+        await ctx.reply('Pengaduan Anda sudah kami terima. Apakah ada pengaduan lagi?', {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: 'Ya, Buat Pengaduan Lagi', callback_data: 'ulang_pengaduan' }],
+              [{ text: 'Tidak, Terima Kasih', callback_data: 'selesai_pengaduan' }]
+            ]
+          }
+        });
+        
+        // Tetap hapus state agar tidak nyangkut di step 5 jika user mengetik teks biasa
         delete userState[userId]; 
-        await ctx.reply('Pengaduan Anda sudah kami terima, Apakah ada pengaduan lagi?\n\n(Ketik /start jika ingin mengadu lagi)');
         break;
     }
   } catch (err) {
