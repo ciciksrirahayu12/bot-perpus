@@ -29,6 +29,17 @@ bot.command('stop', async (ctx) => {
     return await ctx.reply("Tidak ada sesi aktif yang sedang berjalan.");
 });
 
+// Handler untuk perintah /bantuan
+bot.command('bantuan', async (ctx) => {
+    return await ctx.reply(
+        "🆘 *Bantuan Layanan Pengaduan*\n\n" +
+        "Jika Anda mengalami kendala dalam penggunaan bot ini atau memiliki pertanyaan lebih lanjut, silakan hubungi admin Perpustakaan melalui :\n\n" +
+        "👉 @perpus_unuja\n\n" +
+        "Ketik /start untuk memulai pengaduan atau /stop untuk membatalkan sesi yang sedang berjalan.",
+        { parse_mode: 'Markdown' }
+    );
+});
+
 // 2. Handler Pesan Teks
 bot.on('text', async (ctx) => {
   const userId = ctx.from.id;
