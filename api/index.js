@@ -77,6 +77,7 @@ bot.on('text', async (ctx) => {
                     return await ctx.reply(`❌ Gagal meneruskan ke admin.\nDetail: ${err.message}\n\nAdmin wajib klik START dulu di bot ini.`);
                 }
                 break;
+                console.log("Mencoba mengirim ke ID:", ADMIN_ID);
         }
     } catch (err) {
         return await ctx.reply('Terjadi kesalahan teknis.');
