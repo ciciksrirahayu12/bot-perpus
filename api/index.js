@@ -149,7 +149,7 @@ bot.on('text', async (ctx) => {
     return ctx.reply('Terjadi kesalahan teknis. Ketik /start untuk mencoba lagi.');
   }
 });
-
+}
 // 3. Handler Klik Tombol
 bot.action('ulang_aduan', async (ctx) => {
   await ctx.answerCbQuery();
