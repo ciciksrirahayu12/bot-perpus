@@ -4,7 +4,7 @@ const { Telegraf } = require('telegraf');
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // 2. ID Admin (Akun yang akan menerima laporan)
-const ADMIN_ID = 7812077042; 
+const ADMIN_ID = 601245022; 
 
 // Penyimpanan sementara data user
 const userState = {};
