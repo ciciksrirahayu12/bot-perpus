@@ -20,18 +20,10 @@ bot.command('tes', async (ctx) => {
 });
 
 // 1. Perintah /start
-// bot.start((ctx) => {
-//     const userId = ctx.from.id;
-//     userState[userId] = { step: 1, nama: '', nim: '', kontak: '', jenis: '', isi: '' };
-//     return ctx.reply('Selamat Datang di Bot Pengaduan Perpustakaan UNUJA\n\nSilakan ketik Nama Lengkap Anda:');
-// });
-
 bot.start((ctx) => {
-  const userId = ctx.from.id;
-  // Pesan ini akan muncul di Telegram kamu
-  ctx.reply(`Halo! ID Telegram kamu yang terbaca sistem adalah: ${userId}\n\nPastikan angka ini yang kamu masukkan ke dalam ADMIN_ID di kode Node.js kamu.`);
-  
-  userState[userId] = { step: 1, nama: '', nim: '', kontak: '', jenis: '', isi: '' };
+    const userId = ctx.from.id;
+    userState[userId] = { step: 1, nama: '', nim: '', kontak: '', jenis: '', isi: '' };
+    return ctx.reply('Selamat Datang di Bot Pengaduan Perpustakaan UNUJA\n\nSilakan ketik Nama Lengkap Anda:');
 });
 
 // Handler untuk perintah /stop
