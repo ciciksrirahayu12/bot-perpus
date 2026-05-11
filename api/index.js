@@ -13,7 +13,7 @@ bot.start((ctx) => {
     const userId = ctx.from.id;
     // Reset status user setiap kali klik start
     userState[userId] = { step: 1, nama: '', nim: '', kontak: '', jenis: '', isi: '' };
-    return ctx.reply('👋 *Selamat Datang di Layanan Pengaduan*\n\nSilakan masukkan *Nama Lengkap* Anda:', { parse_mode: 'Markdown' });
+    return ctx.reply('Selamat Datang di Layanan Pengaduan Perpustakaan UNUJA\n\nSilakan masukkan *Nama Lengkap* Anda:', { parse_mode: 'Markdown' });
 });
 
 // --- HANDLING PESAN TEKS ---
@@ -36,7 +36,7 @@ bot.on('text', async (ctx) => {
             case 2:
                 state.nim = msg;
                 state.step = 3;
-                return await ctx.reply('Masukkan *Nomor WhatsApp* aktif Anda:', { parse_mode: 'Markdown' });
+                return await ctx.reply('Masukkan Nomor WhatsApp atau Telegram aktif Anda:', { parse_mode: 'Markdown' });
 
             case 3:
                 state.kontak = msg;
