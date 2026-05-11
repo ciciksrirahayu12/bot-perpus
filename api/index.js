@@ -78,32 +78,53 @@ bot.on('text', async (ctx) => {
     state.jenis = kategori[msg];
     state.step = 5;
     return await ctx.reply(`Jenis: ${state.jenis}\n\nSekarang, silakan tuliskan isi pengaduan Anda secara lengkap:`);
-      case 5: // Simpan Isi & Kirim
-        state.isi = msg;
-        
-        const laporan = `📢 *PENGADUAN BARU*\n\n` +
-                        `👤 *Nama:* ${state.nama}\n` +
-                        `🆔 *NIM:* ${state.nim}\n` +
-                        `📞 *Kontak:* ${state.kontak}\n` +
-                        `📂 *Jenis:* ${state.jenis}\n` +
-                        `📝 *Isi:* ${state.isi}`;
-        
-        // Kirim ke Admin
-        await ctx.telegram.sendMessage(ADMIN_ID, laporan, { parse_mode: 'Markdown' }).catch(e => console.log("Gagal kirim admin"));
+      case 5: // Simpan Isi & Kirim ke Admin + Sheets
+    state.isi = msg;
+    
+    // 1. Generate Tiket ID & Waktu
+    const tiketId = `LP-${Date.now()}`;
+    state.tiketId = tiketId; // Simpan ke state agar bisa dibawa ke Google Sheets
+    const waktuSekarang = new Date().toLocaleString('id-ID');
 
-        // Set ke step 0 (Menunggu pilihan tombol, tidak merespon teks biasa)
-        state.step = 0;
+    // 2. Simpan ke Google Sheets (Asynchronous)
+    // Pastikan fungsi simpanKeSheets(state) sudah Anda buat di luar handler
+    await simpanKeSheets(state).catch(e => console.log("Gagal simpan ke Sheets:", e));
 
-        return await ctx.reply(`Terima kasih ${state.nama}, laporan telah kami teruskan.\nApakah ada hal lain yang ingin diadukan lagi?`, {
-          reply_markup: {
-            inline_keyboard: [
-              [
-                { text: 'Ya (Buat Aduan Baru)', callback_data: 'ulang_aduan' },
-                { text: 'Tidak (Selesai)', callback_data: 'tutup_sesi' }
-              ]
-            ]
-          }
-        });
+    // 3. Susun Format Laporan Lengkap untuk Admin
+    const laporanKeAdmin = 
+        `📢 *PENGADUAN BARU MASUK*\n\n` +
+        `🎫 *Tiket:* ${state.tiketId}\n` +
+        `👤 *Nama:* ${state.nama}\n` +
+        `🆔 *NIM:* ${state.nim}\n` +
+        `📞 *Kontak:* ${state.kontak}\n` +
+        `📂 *Jenis:* ${state.jenis}\n` +
+        `📝 *Isi:* ${state.isi}\n\n` +
+        `📅 *Waktu:* ${waktuSekarang}`;
+
+    // 4. Kirim Notifikasi ke Admin
+    await ctx.telegram.sendMessage(ADMIN_ID, laporanKeAdmin, { 
+        parse_mode: 'Markdown' 
+    }).catch(e => console.log("Gagal kirim ke admin:", e));
+
+    // 5. Ubah Step ke 0 agar bot tidak merespon teks bebas sementara waktu
+    state.step = 0;
+
+    // 6. Kirim Konfirmasi ke User dengan Tombol Interaktif
+    return await ctx.reply(
+        `Terima kasih *${state.nama}*, laporan Anda telah kami terima dengan nomor tiket: *${state.tiketId}*.\n\n` +
+        `Apakah ada hal lain yang ingin diadukan lagi?`, 
+        {
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        { text: 'Ya (Buat Aduan Baru)', callback_data: 'ulang_aduan' },
+                        { text: 'Tidak (Selesai)', callback_data: 'tutup_sesi' }
+                    ]
+                ]
+            }
+        }
+    );
     }
   } catch (err) {
     console.error(err);
