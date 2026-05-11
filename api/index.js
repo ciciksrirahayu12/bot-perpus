@@ -45,11 +45,16 @@ bot.on('text', async (ctx) => {
         return await ctx.reply('Pilih Jenis Pengaduan (Ketik angka 1-5):\n1. Layanan\n2. Koleksi\n3. Fasilitas\n4. Sistem\n5. Lainnya');
 
       case 4: // Simpan Jenis
-        const kategori = { '1': 'Layanan', '2': 'Koleksi', '3': 'Fasilitas', '4': 'Sistem', '5': 'Lainnya' };
-        state.jenis = kategori[msg] || 'Lainnya';
-        state.step = 5;
-        return await ctx.reply(`Jenis: ${state.jenis}\n\nSekarang, silakan tuliskan isi pengaduan Anda secara lengkap:`);
+    const kategori = { '1': 'Layanan', '2': 'Koleksi', '3': 'Fasilitas', '4': 'Sistem', '5': 'Lainnya' };
 
+    // Cek apakah input ada di dalam kunci objek kategori
+    if (!kategori[msg]) {
+        return await ctx.reply("⚠️ Pilihan tidak valid. Silakan ketik angka 1 sampai 5 saja sesuai menu:");
+    }
+
+    state.jenis = kategori[msg];
+    state.step = 5;
+    return await ctx.reply(`Jenis: ${state.jenis}\n\nSekarang, silakan tuliskan isi pengaduan Anda secara lengkap:`);
       case 5: // Simpan Isi & Kirim
         state.isi = msg;
         
