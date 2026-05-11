@@ -87,22 +87,17 @@ bot.on('text', async (ctx) => {
     state.jenis = kategori[msg];
     state.step = 5;
     return await ctx.reply(`Jenis: ${state.jenis}\n\nSekarang, silakan tuliskan isi pengaduan Anda secara lengkap:`);
-      case 5: // Tahap Akhir: Pengolahan Data dan Pengiriman
+      case 5: // Tahap Akhir: Kirim Laporan Langsung ke Admin
     state.isi = msg;
     
     // 1. Generate ID Tiket Unik
     const tiketId = `LP-${Date.now()}`;
-    state.tiketId = tiketId; // Simpan ke state agar masuk ke Sheets
+    state.tiketId = tiketId;
 
-    // 2. Beri feedback ke user bahwa proses sedang berjalan
-    const loadingMsg = await ctx.reply("⏳ Sedang memproses laporan Anda, mohon tunggu...");
+    await ctx.reply("⏳ Sedang meneruskan laporan Anda ke admin...");
 
     try {
-        // 3. Simpan ke Google Sheets
-        // Fungsi simpanKeSheets(state) harus sudah ada di file Anda
-        await simpanKeSheets(state);
-
-        // 4. Susun Pesan untuk Admin (Format HTML agar stabil)
+        // 2. Susun Format Laporan (HTML)
         const pesanAdmin = 
             `<b>📢 PENGADUAN BARU MASUK</b>\n\n` +
             `🎫 <b>Tiket:</b> #${state.tiketId}\n` +
@@ -113,19 +108,18 @@ bot.on('text', async (ctx) => {
             `📝 <b>Isi:</b> ${state.isi}\n\n` +
             `📅 <i>Waktu: ${new Date().toLocaleString('id-ID')}</i>`;
 
-        // 5. Kirim ke ID Admin
+        // 3. Kirim ke ID Admin (Pastikan ADMIN_ID sudah benar)
         await ctx.telegram.sendMessage(ADMIN_ID, pesanAdmin, { parse_mode: 'HTML' });
 
-        // 6. Hapus pesan loading dan kirim konfirmasi akhir ke User
-        await ctx.telegram.deleteMessage(ctx.chat.id, loadingMsg.message_id).catch(() => {});
-        
-        // Reset step ke 0 (menunggu pilihan tombol)
+        // 4. Ubah Step ke 0 agar aman
         state.step = 0;
 
+        // 5. Konfirmasi ke User + Tombol Interaktif
         await ctx.reply(
-            `✅ <b>Laporan Berhasil Terkirim!</b>\n\n` +
-            `Nomor Tiket Anda: <code>${state.tiketId}</code>\n\n` +
-            `Apakah ada hal lain yang ingin Anda adukan?`, 
+            `✅ <b>Laporan Terkirim!</b>\n\n` +
+            `Nomor Tiket: <code>${state.tiketId}</code>\n` +
+            `Admin akan segera menindaklanjuti laporan Anda.\n\n` +
+            `Ada lagi yang ingin diadukan?`, 
             {
                 parse_mode: 'HTML',
                 reply_markup: {
@@ -139,6 +133,11 @@ bot.on('text', async (ctx) => {
             }
         );
 
+    } catch (error) {
+        console.error("Gagal kirim ke admin:", error.message);
+        await ctx.reply("❌ Maaf, bot gagal menghubungi admin. Pastikan Anda sudah menekan /start di bot ini.");
+    }
+    break;
     } catch (error) {
         console.error("Error di Case 5:", error);
         await ctx.reply("❌ Maaf, terjadi kesalahan saat menyimpan laporan. Silakan coba lagi nanti.");
