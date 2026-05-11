@@ -1,6 +1,6 @@
 const { Telegraf, Markup } = require('telegraf');
 
-const bot = new Telegraf('8253691234:AAHxxxxxxxxxxxxxxx'); // Ganti Token
+const bot = new Telegraf('8253691234:AAFf_L0O9ID-bHEvNSaFVxioCVg7Y9fZjEQ'); // Ganti Token
 const ADMIN_ID = 7812077042; // ID Kamu
 
 const userState = {};
