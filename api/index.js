@@ -82,40 +82,64 @@ bot.on('text', async (ctx) => {
                 state.step = 5;
                 return await ctx.reply(`Jenis: ${state.jenis}\n\nSekarang, silakan tuliskan isi pengaduan Anda secara lengkap:`);
 
-            case 5:
+    //         case 5:
+    // state.isi = msg;
+    // state.tiketId = `LP-${Date.now()}`;
+
+    // await ctx.reply("⏳ Sedang meneruskan laporan Anda ke admin...");
+
+    // try {
+    //     // Susun teks laporan (Tanpa tag HTML dulu untuk tes keamanan)
+    //     const laporanPolos = 
+    //         `📢 PENGADUAN BARU MASUK\n\n` +
+    //         `🎫 Tiket: #${state.tiketId}\n` +
+    //         `👤 Nama: ${state.nama}\n` +
+    //         `🆔 NIM: ${state.nim}\n` +
+    //         `📞 Kontak: ${state.kontak}\n` +
+    //         `📂 Jenis: ${state.jenis}\n` +
+    //         `📝 Isi: ${state.isi}\n\n` +
+    //         `📅 Waktu: ${new Date().toLocaleString('id-ID')}`;
+
+    //     // Kirim ke Admin (Tanpa parse_mode agar tidak gampang error)
+    //     await ctx.telegram.sendMessage(ADMIN_ID, laporanPolos);
+
+    //     state.step = 0;
+    //     return await ctx.reply(
+    //         `✅ Laporan Terkirim!\nNomor Tiket: ${state.tiketId}\n\nAda lagi yang ingin diadukan?`, 
+    //         {
+    //             reply_markup: {
+    //                 inline_keyboard: [
+    //                     [
+    //                         { text: 'Ya', callback_data: 'ulang_aduan' },
+    //                         { text: 'Tidak', callback_data: 'tutup_sesi' }
+    //                     ]
+    //                 ]
+    //             }
+    //         }
+
+                case 5:
     state.isi = msg;
     state.tiketId = `LP-${Date.now()}`;
 
-    await ctx.reply("⏳ Sedang meneruskan laporan Anda ke admin...");
+    await ctx.reply("⏳ Sedang mencoba mengirim laporan...");
 
     try {
-        // Susun teks laporan (Tanpa tag HTML dulu untuk tes keamanan)
-        const laporanPolos = 
-            `📢 PENGADUAN BARU MASUK\n\n` +
-            `🎫 Tiket: #${state.tiketId}\n` +
-            `👤 Nama: ${state.nama}\n` +
-            `🆔 NIM: ${state.nim}\n` +
-            `📞 Kontak: ${state.kontak}\n` +
-            `📂 Jenis: ${state.jenis}\n` +
-            `📝 Isi: ${state.isi}\n\n` +
-            `📅 Waktu: ${new Date().toLocaleString('id-ID')}`;
+        const laporan = `📢 TES LAPORAN\nTiket: ${state.tiketId}\nNama: ${state.nama}\nIsi: ${state.isi}`;
 
-        // Kirim ke Admin (Tanpa parse_mode agar tidak gampang error)
-        await ctx.telegram.sendMessage(ADMIN_ID, laporanPolos);
+        // KODE SAKTI: Kita kirim ke ctx.from.id (ID kamu saat ini)
+        // Bukan pakai variabel ADMIN_ID
+        await ctx.telegram.sendMessage(ctx.from.id, laporan);
+
+        await ctx.reply("✅ BERHASIL! Laporan masuk ke chat ini kan? Berarti bot normal.");
+        
+        // Hapus log ini setelah tes berhasil
+        console.log("ID asli kamu adalah: " + ctx.from.id);
 
         state.step = 0;
-        return await ctx.reply(
-            `✅ Laporan Terkirim!\nNomor Tiket: ${state.tiketId}\n\nAda lagi yang ingin diadukan?`, 
-            {
-                reply_markup: {
-                    inline_keyboard: [
-                        [
-                            { text: 'Ya', callback_data: 'ulang_aduan' },
-                            { text: 'Tidak', callback_data: 'tutup_sesi' }
-                        ]
-                    ]
-                }
-            }
+    } catch (err) {
+        await ctx.reply("❌ Masih error: " + err.message);
+    }
+    break;
         );
 
     } catch (err) {
