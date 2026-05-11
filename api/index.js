@@ -78,53 +78,63 @@ bot.on('text', async (ctx) => {
     state.jenis = kategori[msg];
     state.step = 5;
     return await ctx.reply(`Jenis: ${state.jenis}\n\nSekarang, silakan tuliskan isi pengaduan Anda secara lengkap:`);
-      case 5: // Simpan Isi & Kirim ke Admin + Sheets
+      case 5: // Tahap Akhir: Pengolahan Data dan Pengiriman
     state.isi = msg;
     
-    // 1. Generate Tiket ID & Waktu
+    // 1. Generate ID Tiket Unik
     const tiketId = `LP-${Date.now()}`;
-    state.tiketId = tiketId; // Simpan ke state agar bisa dibawa ke Google Sheets
-    const waktuSekarang = new Date().toLocaleString('id-ID');
+    state.tiketId = tiketId; // Simpan ke state agar masuk ke Sheets
 
-    // 2. Simpan ke Google Sheets (Asynchronous)
-    // Pastikan fungsi simpanKeSheets(state) sudah Anda buat di luar handler
-    await simpanKeSheets(state).catch(e => console.log("Gagal simpan ke Sheets:", e));
+    // 2. Beri feedback ke user bahwa proses sedang berjalan
+    const loadingMsg = await ctx.reply("⏳ Sedang memproses laporan Anda, mohon tunggu...");
 
-    // 3. Susun Format Laporan Lengkap untuk Admin
-    const laporanKeAdmin = 
-        `📢 *PENGADUAN BARU MASUK*\n\n` +
-        `🎫 *Tiket:* ${state.tiketId}\n` +
-        `👤 *Nama:* ${state.nama}\n` +
-        `🆔 *NIM:* ${state.nim}\n` +
-        `📞 *Kontak:* ${state.kontak}\n` +
-        `📂 *Jenis:* ${state.jenis}\n` +
-        `📝 *Isi:* ${state.isi}\n\n` +
-        `📅 *Waktu:* ${waktuSekarang}`;
+    try {
+        // 3. Simpan ke Google Sheets
+        // Fungsi simpanKeSheets(state) harus sudah ada di file Anda
+        await simpanKeSheets(state);
 
-    // 4. Kirim Notifikasi ke Admin
-    await ctx.telegram.sendMessage(ADMIN_ID, laporanKeAdmin, { 
-        parse_mode: 'Markdown' 
-    }).catch(e => console.log("Gagal kirim ke admin:", e));
+        // 4. Susun Pesan untuk Admin (Format HTML agar stabil)
+        const pesanAdmin = 
+            `<b>📢 PENGADUAN BARU MASUK</b>\n\n` +
+            `🎫 <b>Tiket:</b> #${state.tiketId}\n` +
+            `👤 <b>Nama:</b> ${state.nama}\n` +
+            `🆔 <b>NIM:</b> ${state.nim}\n` +
+            `📞 <b>Kontak:</b> ${state.kontak}\n` +
+            `📂 <b>Jenis:</b> ${state.jenis}\n` +
+            `📝 <b>Isi:</b> ${state.isi}\n\n` +
+            `📅 <i>Waktu: ${new Date().toLocaleString('id-ID')}</i>`;
 
-    // 5. Ubah Step ke 0 agar bot tidak merespon teks bebas sementara waktu
-    state.step = 0;
+        // 5. Kirim ke ID Admin
+        await ctx.telegram.sendMessage(ADMIN_ID, pesanAdmin, { parse_mode: 'HTML' });
 
-    // 6. Kirim Konfirmasi ke User dengan Tombol Interaktif
-    return await ctx.reply(
-        `Terima kasih *${state.nama}*, laporan Anda telah kami terima dengan nomor tiket: *${state.tiketId}*.\n\n` +
-        `Apakah ada hal lain yang ingin diadukan lagi?`, 
-        {
-            parse_mode: 'Markdown',
-            reply_markup: {
-                inline_keyboard: [
-                    [
-                        { text: 'Ya (Buat Aduan Baru)', callback_data: 'ulang_aduan' },
-                        { text: 'Tidak (Selesai)', callback_data: 'tutup_sesi' }
+        // 6. Hapus pesan loading dan kirim konfirmasi akhir ke User
+        await ctx.telegram.deleteMessage(ctx.chat.id, loadingMsg.message_id).catch(() => {});
+        
+        // Reset step ke 0 (menunggu pilihan tombol)
+        state.step = 0;
+
+        await ctx.reply(
+            `✅ <b>Laporan Berhasil Terkirim!</b>\n\n` +
+            `Nomor Tiket Anda: <code>${state.tiketId}</code>\n\n` +
+            `Apakah ada hal lain yang ingin Anda adukan?`, 
+            {
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            { text: 'Ya (Buat Baru)', callback_data: 'ulang_aduan' },
+                            { text: 'Tidak (Selesai)', callback_data: 'tutup_sesi' }
+                        ]
                     ]
-                ]
+                }
             }
-        }
-    );
+        );
+
+    } catch (error) {
+        console.error("Error di Case 5:", error);
+        await ctx.reply("❌ Maaf, terjadi kesalahan saat menyimpan laporan. Silakan coba lagi nanti.");
+    }
+    break;
     }
   } catch (err) {
     console.error(err);
