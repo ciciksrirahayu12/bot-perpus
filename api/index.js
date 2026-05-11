@@ -9,6 +9,15 @@ const ADMIN_ID = 7812077042;
 // Database temporary (akan tersimpan selama server Vercel aktif)
 const userState = {};
 
+bot.command('tes', async (ctx) => {
+    try {
+        await ctx.telegram.sendMessage(ADMIN_ID, "Halo Admin! Bot bisa mengirim pesan ke sini.");
+        await ctx.reply("✅ Berhasil kirim tes ke Admin!");
+    } catch (err) {
+        await ctx.reply(`❌ Gagal! Error: ${err.description}`);
+    }
+});
+
 // 1. Perintah /start
 bot.start((ctx) => {
   const userId = ctx.from.id;
