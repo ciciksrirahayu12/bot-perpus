@@ -3,7 +3,7 @@ const { Telegraf } = require('telegraf');
 // Inisialisasi Bot
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// KONFIGURASI: ID Admin sudah benar sesuai angka yang kamu berikan
+// KONFIGURASI: ID Admin
 const ADMIN_ID = 7812077042; 
 
 // Database temporary
@@ -83,47 +83,42 @@ bot.on('text', async (ctx) => {
                 return await ctx.reply(`Jenis: ${state.jenis}\n\nSekarang, silakan tuliskan isi pengaduan Anda secara lengkap:`);
 
             case 5:
-    state.isi = msg;
-    state.tiketId = `LP-${Date.now()}`;
+                state.isi = msg;
+                state.tiketId = `LP-${Date.now()}`;
 
-    await ctx.reply("⏳ Sedang meneruskan laporan Anda ke admin...");
+                await ctx.reply("⏳ Sedang meneruskan laporan Anda ke admin...");
 
-    try {
-        // Susun teks laporan (Tanpa tag HTML dulu untuk tes keamanan)
-        const laporanPolos = 
-            `📢 PENGADUAN BARU MASUK\n\n` +
-            `🎫 Tiket: #${state.tiketId}\n` +
-            `👤 Nama: ${state.nama}\n` +
-            `🆔 NIM: ${state.nim}\n` +
-            `📞 Kontak: ${state.kontak}\n` +
-            `📂 Jenis: ${state.jenis}\n` +
-            `📝 Isi: ${state.isi}\n\n` +
-            `📅 Waktu: ${new Date().toLocaleString('id-ID')}`;
+                try {
+                    const laporanPolos = 
+                        `📢 PENGADUAN BARU MASUK\n\n` +
+                        `🎫 Tiket: #${state.tiketId}\n` +
+                        `👤 Nama: ${state.nama}\n` +
+                        `🆔 NIM: ${state.nim}\n` +
+                        `📞 Kontak: ${state.kontak}\n` +
+                        `📂 Jenis: ${state.jenis}\n` +
+                        `📝 Isi: ${state.isi}\n\n` +
+                        `📅 Waktu: ${new Date().toLocaleString('id-ID')}`;
 
-        // Kirim ke Admin (Tanpa parse_mode agar tidak gampang error)
-        await ctx.telegram.sendMessage(ADMIN_ID, laporanPolos);
+                    await ctx.telegram.sendMessage(ADMIN_ID, laporanPolos);
 
-        state.step = 0;
-        return await ctx.reply(
-            `✅ Laporan Terkirim!\nNomor Tiket: ${state.tiketId}\n\nAda lagi yang ingin diadukan?`, 
-            {
-                reply_markup: {
-                    inline_keyboard: [
-                        [
-                            { text: 'Ya', callback_data: 'ulang_aduan' },
-                            { text: 'Tidak', callback_data: 'tutup_sesi' }
-                        ]
-                    ]
+                    state.step = 0;
+                    return await ctx.reply(
+                        `✅ Laporan Terkirim!\nNomor Tiket: ${state.tiketId}\n\nAda lagi yang ingin diadukan?`, 
+                        {
+                            reply_markup: {
+                                inline_keyboard: [
+                                    [
+                                        { text: 'Ya', callback_data: 'ulang_aduan' },
+                                        { text: 'Tidak', callback_data: 'tutup_sesi' }
+                                    ]
+                                ]
+                            }
+                        }
+                    );
+                } catch (err) {
+                    console.error("GAGAL KIRIM KE ADMIN:", err.message);
+                    return ctx.reply(`❌ Gagal meneruskan ke admin.\nDetail Error: ${err.message}`);
                 }
-            }
-
-                
-
-    } catch (err) {
-        console.error("GAGAL KIRIM KE ADMIN:", err.message);
-        // Jika masih error, bot akan memberi tahu detail errornya di chat (untuk debug)
-        return ctx.reply(`❌ Gagal meneruskan ke admin.\nDetail Error: ${err.message}`);
-    }
         }
     } catch (err) {
         console.error("Error Handler:", err);
@@ -136,7 +131,7 @@ bot.action('ulang_aduan', async (ctx) => {
     await ctx.answerCbQuery();
     const userId = ctx.from.id;
     if (userState[userId]) {
-        userState[userId].step = 4; // Balik ke pilih jenis
+        userState[userId].step = 4;
         return ctx.reply('Silakan pilih kembali Jenis Pengaduan (1-5):\n1. Layanan\n2. Koleksi\n3. Fasilitas\n4. Sistem\n5. Lainnya');
     }
     return ctx.reply('Sesi berakhir. Ketik /start untuk mulai kembali.');
