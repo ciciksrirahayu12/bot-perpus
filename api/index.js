@@ -83,43 +83,46 @@ bot.on('text', async (ctx) => {
                 return await ctx.reply(`Jenis: ${state.jenis}\n\nSekarang, silakan tuliskan isi pengaduan Anda secara lengkap:`);
 
             case 5:
-                state.isi = msg;
-                state.tiketId = `LP-${Date.now()}`;
+    state.isi = msg;
+    state.tiketId = `LP-${Date.now()}`;
 
-                await ctx.reply("⏳ Sedang meneruskan laporan Anda ke admin...");
+    await ctx.reply("⏳ Sedang meneruskan laporan Anda ke admin...");
 
-                // Susun Format Laporan untuk Admin
-                const pesanAdmin = 
-                    `<b>📢 PENGADUAN BARU MASUK</b>\n\n` +
-                    `🎫 <b>Tiket:</b> #${state.tiketId}\n` +
-                    `👤 <b>Nama:</b> ${state.nama}\n` +
-                    `🆔 <b>NIM:</b> ${state.nim}\n` +
-                    `📞 <b>Kontak:</b> ${state.kontak}\n` +
-                    `📂 <b>Jenis:</b> ${state.jenis}\n` +
-                    `📝 <b>Isi:</b> ${state.isi}\n\n` +
-                    `📅 <i>Waktu: ${new Date().toLocaleString('id-ID')}</i>`;
+    try {
+        // Susun teks laporan (Tanpa tag HTML dulu untuk tes keamanan)
+        const laporanPolos = 
+            `📢 PENGADUAN BARU MASUK\n\n` +
+            `🎫 Tiket: #${state.tiketId}\n` +
+            `👤 Nama: ${state.nama}\n` +
+            `🆔 NIM: ${state.nim}\n` +
+            `📞 Kontak: ${state.kontak}\n` +
+            `📂 Jenis: ${state.jenis}\n` +
+            `📝 Isi: ${state.isi}\n\n` +
+            `📅 Waktu: ${new Date().toLocaleString('id-ID')}`;
 
-                // Kirim ke Admin
-                await ctx.telegram.sendMessage(ADMIN_ID, pesanAdmin, { parse_mode: 'HTML' });
+        // Kirim ke Admin (Tanpa parse_mode agar tidak gampang error)
+        await ctx.telegram.sendMessage(ADMIN_ID, laporanPolos);
 
-                state.step = 0; // Kunci input teks bebas
+        state.step = 0;
+        return await ctx.reply(
+            `✅ Laporan Terkirim!\nNomor Tiket: ${state.tiketId}\n\nAda lagi yang ingin diadukan?`, 
+            {
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            { text: 'Ya', callback_data: 'ulang_aduan' },
+                            { text: 'Tidak', callback_data: 'tutup_sesi' }
+                        ]
+                    ]
+                }
+            }
+        );
 
-                return await ctx.reply(
-                    `✅ <b>Laporan Terkirim!</b>\n\n` +
-                    `Nomor Tiket: <code>${state.tiketId}</code>\n\n` +
-                    `Ada lagi yang ingin diadukan?`, 
-                    {
-                        parse_mode: 'HTML',
-                        reply_markup: {
-                            inline_keyboard: [
-                                [
-                                    { text: 'Ya (Buat Baru)', callback_data: 'ulang_aduan' },
-                                    { text: 'Tidak (Selesai)', callback_data: 'tutup_sesi' }
-                                ]
-                            ]
-                        }
-                    }
-                );
+    } catch (err) {
+        console.error("GAGAL KIRIM KE ADMIN:", err.message);
+        // Jika masih error, bot akan memberi tahu detail errornya di chat (untuk debug)
+        return ctx.reply(`❌ Gagal meneruskan ke admin.\nDetail Error: ${err.message}`);
+    }
         }
     } catch (err) {
         console.error("Error Handler:", err);
