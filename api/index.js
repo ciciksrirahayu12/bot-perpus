@@ -1,27 +1,23 @@
 const { Telegraf } = require('telegraf');
 
-// 1. Pastikan Token di Vercel sudah benar
+// 1. Inisialisasi Bot
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// 2. ID Admin (Akun yang akan menerima laporan)
-const ADMIN_ID = 601245022; 
+// 2. ID Admin (Gunakan ID yang sudah dipastikan klik /start)
+const ADMIN_ID = 7812077042; 
 
-// Penyimpanan sementara data user
 const userState = {};
 
-// --- COMMAND START ---
 bot.start((ctx) => {
     const userId = ctx.from.id;
     userState[userId] = { step: 1, nama: '', nim: '', kontak: '', jenis: '', isi: '' };
     return ctx.reply('👋 Selamat Datang di Bot Pengaduan Perpustakaan UNUJA\n\nSilakan masukkan *Nama Lengkap* Anda:', { parse_mode: 'Markdown' });
 });
 
-// --- HANDLING TEKS ---
 bot.on('text', async (ctx) => {
     const userId = ctx.from.id;
     const msg = ctx.message.text;
 
-    // Abaikan jika pesan adalah perintah atau user tidak dalam sesi lapor
     if (msg.startsWith('/') || !userState[userId]) return;
 
     const state = userState[userId];
@@ -42,19 +38,14 @@ bot.on('text', async (ctx) => {
                 state.kontak = msg;
                 state.step = 4;
                 return await ctx.reply(
-                    'Pilih *Jenis Pengaduan* (Ketik angka 1-5):\n\n' +
-                    '1️⃣ Layanan\n' +
-                    '2️⃣ Koleksi\n' +
-                    '3️⃣ Fasilitas\n' +
-                    '4️⃣ Sistem\n' +
-                    '5️⃣ Lainnya', 
+                    'Pilih *Jenis Pengaduan* (Ketik angka 1-5):\n\n1️⃣ Layanan\n2️⃣ Koleksi\n3️⃣ Fasilitas\n4️⃣ Sistem\n5️⃣ Lainnya',
                     { parse_mode: 'Markdown' }
                 );
 
             case 4:
                 const kategori = { '1': 'Layanan', '2': 'Koleksi', '3': 'Fasilitas', '4': 'Sistem', '5': 'Lainnya' };
                 if (!kategori[msg]) {
-                    return await ctx.reply('⚠️ Mohon masukkan angka 1 sampai 5 saja sesuai pilihan di atas.');
+                    return await ctx.reply('⚠️ Mohon masukkan angka 1 sampai 5 saja.');
                 }
                 state.jenis = kategori[msg];
                 state.step = 5;
@@ -63,7 +54,6 @@ bot.on('text', async (ctx) => {
             case 5:
                 state.isi = msg;
                 state.tiketId = `LP-${Date.now()}`;
-                
                 await ctx.reply("⏳ Sedang meneruskan laporan Anda ke admin...");
 
                 const pesanUntukAdmin = 
@@ -77,62 +67,47 @@ bot.on('text', async (ctx) => {
                     `📅 _Waktu: ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}_`;
 
                 try {
-                    // KIRIM KE ADMIN (Kuncinya di sini)
                     await ctx.telegram.sendMessage(ADMIN_ID, pesanUntukAdmin, { parse_mode: 'Markdown' });
-                    
-                    // Hapus sesi jika berhasil
                     delete userState[userId];
-
                     return await ctx.reply(
-                        `✅ *Laporan Berhasil Terkirim!*\n\nNomor Tiket Anda: \`${state.tiketId}\`\n\nApakah ada hal lain yang ingin diadukan?`, 
+                        `✅ *Laporan Berhasil Terkirim!*\n\nNomor Tiket: \`${state.tiketId}\`\n\nAda lagi yang ingin diadukan?`, 
                         {
                             parse_mode: 'Markdown',
                             reply_markup: {
                                 inline_keyboard: [
-                                    [
-                                        { text: 'Ya, Lapor Lagi', callback_data: 'ulang' },
-                                        { text: 'Tidak, Terima Kasih', callback_data: 'tutup' }
-                                    ]
+                                    [{ text: 'Ya, Lapor Lagi', callback_data: 'ulang' }, { text: 'Tidak, Terima Kasih', callback_data: 'tutup' }]
                                 ]
                             }
                         }
                     );
                 } catch (adminErr) {
-                    console.error("Gagal kirim ke admin:", adminErr.message);
-                    return await ctx.reply(`❌ *Gagal Terkirim ke Admin*\n\nDetail Error: \`${adminErr.message}\`\n\nPastikan ID Admin sudah menekan /start di bot ini.`);
+                    return await ctx.reply(`❌ *Gagal ke Admin*\nDetail: \`${adminErr.message}\``);
                 }
         }
     } catch (err) {
-        console.error("System Error:", err);
-        return await ctx.reply("❌ Terjadi kesalahan sistem. Silakan coba lagi nanti.");
+        return await ctx.reply("❌ Terjadi kesalahan sistem.");
     }
 });
 
-// --- HANDLING BUTTONS ---
 bot.action('ulang', async (ctx) => {
     await ctx.answerCbQuery();
     const userId = ctx.from.id;
-    userState[userId] = { step: 4 }; // Langsung balik ke pilih jenis agar praktis
-    return ctx.reply('Silakan pilih kembali *Jenis Pengaduan* (1-5):', { parse_mode: 'Markdown' });
+    userState[userId] = { step: 1 }; // Reset ke awal jika ingin lapor lagi
+    return ctx.reply('Silakan masukkan *Nama Lengkap* Anda:', { parse_mode: 'Markdown' });
 });
 
 bot.action('tutup', async (ctx) => {
     await ctx.answerCbQuery();
-    delete userState[ctx.from.id];
-    return ctx.editMessageText('🙏 Terima kasih telah menggunakan layanan pengaduan Perpustakaan UNUJA.');
+    return ctx.editMessageText('🙏 Terima kasih telah menghubungi layanan Perpustakaan UNUJA.');
 });
 
-// --- EXPORT UNTUK VERCEL ---
 module.exports = async (req, res) => {
     if (req.method === 'POST') {
         try {
             await bot.handleUpdate(req.body);
             res.status(200).send('OK');
-        } catch (err) {
-            console.error("Webhook Error:", err);
-            res.status(200).send('OK');
-        }
+        } catch (err) { res.status(200).send('OK'); }
     } else {
-        res.status(200).send('<h1>Bot is Running</h1>');
+        res.status(200).send('Bot is Running');
     }
 };
