@@ -41,44 +41,63 @@ bot.on('text', async (ctx) => {
                 state.step = 5;
                 return await ctx.reply(`Jenis: ${state.jenis}\n\nSekarang, silakan tuliskan isi pengaduan Anda secara lengkap:`);
 
+        //     case 5:
+        //         state.isi = msg;
+        //         state.tiketId = `LP-${Date.now()}`;
+        //         await ctx.reply("⏳ Sedang meneruskan laporan Anda ke admin...");
+
+        //         const laporan = `📢 *PENGADUAN BARU*\n\n` +
+        //                         `🎫 *Tiket:* #${state.tiketId}\n` +
+        //                         `👤 *Nama:* ${state.nama}\n` +
+        //                         `🆔 *NIM:* ${state.nim}\n` +
+        //                         `📞 *Kontak:* ${state.kontak}\n` +
+        //                         `📂 *Jenis:* ${state.jenis}\n` +
+        //                         `📝 *Isi:* ${state.isi}\n\n` +
+        //                         `📅 *Waktu:* ${new Date().toLocaleString('id-ID')}`;
+
+        //         try {
+        //             // PENGIRIMAN KRITIS
+        //             const sent = await ctx.telegram.sendMessage(ADMIN_ID, laporan, { parse_mode: 'Markdown' });
+                    
+        //             if (sent) {
+        //                 delete userState[userId]; 
+        //                 return await ctx.reply(
+        //                     `✅ Laporan Terkirim ke Admin!\nNomor Tiket: ${state.tiketId}\n\nAda lagi yang ingin diadukan?`, 
+        //                     {
+        //                         reply_markup: {
+        //                             inline_keyboard: [
+        //                                 [{ text: 'Ya', callback_data: 'ulang_aduan' }, { text: 'Tidak', callback_data: 'tutup_sesi' }]
+        //                             ]
+        //                         }
+        //                     }
+        //                 );
+        //             }
+        //         } catch (err) {
+        //             // Jika gagal kirim ke admin, user dapet info jujur
+        //             return await ctx.reply(`❌ Gagal meneruskan ke admin.\nDetail: ${err.message}\n\nAdmin wajib klik START dulu di bot ini.`);
+        //         }
+        //         break;
+        //         console.log("Mencoba mengirim ke ID:", ADMIN_ID);
+        // }
+
             case 5:
                 state.isi = msg;
                 state.tiketId = `LP-${Date.now()}`;
-                await ctx.reply("⏳ Sedang meneruskan laporan Anda ke admin...");
-
-                const laporan = `📢 *PENGADUAN BARU*\n\n` +
-                                `🎫 *Tiket:* #${state.tiketId}\n` +
-                                `👤 *Nama:* ${state.nama}\n` +
-                                `🆔 *NIM:* ${state.nim}\n` +
-                                `📞 *Kontak:* ${state.kontak}\n` +
-                                `📂 *Jenis:* ${state.jenis}\n` +
-                                `📝 *Isi:* ${state.isi}\n\n` +
-                                `📅 *Waktu:* ${new Date().toLocaleString('id-ID')}`;
+                
+                await ctx.reply("⏳ Meneruskan ke admin...");
 
                 try {
-                    // PENGIRIMAN KRITIS
-                    const sent = await ctx.telegram.sendMessage(ADMIN_ID, laporan, { parse_mode: 'Markdown' });
+                    // 1. GUNAKAN ID DALAM BENTUK ANGKA LANGSUNG DI SINI
+                    // 2. KIRIM PESAN TEKS BIASA DULU (TANPA MARKDOWN) UNTUK TES
+                    await ctx.telegram.sendMessage(7812077042, `📢 LAPORAN BARU\nNama: ${state.nama}\nIsi: ${state.isi}`);
                     
-                    if (sent) {
-                        delete userState[userId]; 
-                        return await ctx.reply(
-                            `✅ Laporan Terkirim ke Admin!\nNomor Tiket: ${state.tiketId}\n\nAda lagi yang ingin diadukan?`, 
-                            {
-                                reply_markup: {
-                                    inline_keyboard: [
-                                        [{ text: 'Ya', callback_data: 'ulang_aduan' }, { text: 'Tidak', callback_data: 'tutup_sesi' }]
-                                    ]
-                                }
-                            }
-                        );
-                    }
+                    delete userState[userId];
+                    return await ctx.reply("✅ BERHASIL! Cek HP Admin sekarang.");
                 } catch (err) {
-                    // Jika gagal kirim ke admin, user dapet info jujur
-                    return await ctx.reply(`❌ Gagal meneruskan ke admin.\nDetail: ${err.message}\n\nAdmin wajib klik START dulu di bot ini.`);
+                    // Jika ini muncul, berarti ID 7812077042 BELUM klik START di bot yang BENAR
+                    return await ctx.reply(`❌ ERROR: ${err.message}`);
                 }
-                break;
-                console.log("Mencoba mengirim ke ID:", ADMIN_ID);
-        }
+                
     } catch (err) {
         return await ctx.reply('Terjadi kesalahan teknis.');
     }
