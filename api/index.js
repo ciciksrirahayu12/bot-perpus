@@ -17,6 +17,18 @@ bot.start((ctx) => {
   return ctx.reply('Selamat Datang di Bot Pengaduan Perpustakaan UNUJA\n\nSilakan ketik Nama Lengkap Anda:');
 });
 
+// Handler untuk perintah /stop
+bot.command('stop', async (ctx) => {
+    const userId = ctx.from.id;
+    
+    if (userState[userId]) {
+        delete userState[userId]; // Hapus data state user
+        return await ctx.reply("🚫 Sesi pengaduan telah dihentikan. Ketik /start untuk memulai kembali.");
+    }
+    
+    return await ctx.reply("Tidak ada sesi aktif yang sedang berjalan.");
+});
+
 // 2. Handler Pesan Teks
 bot.on('text', async (ctx) => {
   const userId = ctx.from.id;
