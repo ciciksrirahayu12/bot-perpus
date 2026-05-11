@@ -1,7 +1,7 @@
 const { Telegraf } = require('telegraf');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
-const ADMIN_ID = 7812077042; // ID Admin (Pastikan angka murni)
+const ADMIN_ID = 601245022; // ID Admin (Pastikan angka murni)
 const userState = {};
 
 bot.start((ctx) => {
