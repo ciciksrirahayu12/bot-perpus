@@ -80,22 +80,43 @@ bot.on('text', async (ctx) => {
         //         console.log("Mencoba mengirim ke ID:", ADMIN_ID);
         // }
 
-            case 5:
+            // case 5:
+            //     state.isi = msg;
+            //     state.tiketId = `LP-${Date.now()}`;
+                
+            //     await ctx.reply("⏳ Meneruskan ke admin...");
+
+            //     try {
+            //         // 1. GUNAKAN ID DALAM BENTUK ANGKA LANGSUNG DI SINI
+            //         // 2. KIRIM PESAN TEKS BIASA DULU (TANPA MARKDOWN) UNTUK TES
+            //         await ctx.telegram.sendMessage(7812077042, `📢 LAPORAN BARU\nNama: ${state.nama}\nIsi: ${state.isi}`);
+                    
+            //         delete userState[userId];
+            //         return await ctx.reply("✅ BERHASIL! Cek HP Admin sekarang.");
+            //     } catch (err) {
+            //         // Jika ini muncul, berarti ID 7812077042 BELUM klik START di bot yang BENAR
+            //         return await ctx.reply(`❌ ERROR: ${err.message}`);
+            //     }
+
+                case 5:
                 state.isi = msg;
                 state.tiketId = `LP-${Date.now()}`;
                 
-                await ctx.reply("⏳ Meneruskan ke admin...");
+                await ctx.reply("⏳ Sedang meneruskan laporan Anda ke admin...");
+
+                const laporan = `📢 *PENGADUAN BARU*\n\n` +
+                                `👤 *Nama:* ${state.nama}\n` +
+                                `📝 *Isi:* ${state.isi}`;
 
                 try {
-                    // 1. GUNAKAN ID DALAM BENTUK ANGKA LANGSUNG DI SINI
-                    // 2. KIRIM PESAN TEKS BIASA DULU (TANPA MARKDOWN) UNTUK TES
-                    await ctx.telegram.sendMessage(7812077042, `📢 LAPORAN BARU\nNama: ${state.nama}\nIsi: ${state.isi}`);
+                    // LANGSUNG TEMBAK KE ANGKA ID (TANPA VARIABEL)
+                    await ctx.telegram.sendMessage(7812077042, laporan, { parse_mode: 'Markdown' });
                     
-                    delete userState[userId];
-                    return await ctx.reply("✅ BERHASIL! Cek HP Admin sekarang.");
+                    delete userState[userId]; 
+                    return await ctx.reply(`✅ Laporan Terkirim!\nNomor Tiket: ${state.tiketId}`);
                 } catch (err) {
-                    // Jika ini muncul, berarti ID 7812077042 BELUM klik START di bot yang BENAR
-                    return await ctx.reply(`❌ ERROR: ${err.message}`);
+                    // JIKA GAGAL, BOT AKAN TERIAK ERRORNYA DI SINI
+                    return await ctx.reply(`❌ ERROR TELEGRAM: ${err.message}`);
                 }
                 
     } catch (err) {
