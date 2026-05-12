@@ -9,21 +9,25 @@ ADMIN_ID = os.getenv("ADMIN_ID")
 @app.route('/', methods=['POST', 'GET'])
 def index():
     if request.method == 'POST':
-        data = request.get_json(force=True)
-        bot = Bot(token=TOKEN)
-        update = Update.de_json(data, bot)
-        
-        if update.message and update.message.text:
-            text = update.message.text
-            chat_id = update.message.chat_id
+        try:
+            # 1. Terima data dari Telegram
+            data = request.get_json(force=True)
+            bot = Bot(token=TOKEN)
+            update = Update.de_json(data, bot)
             
-            if text == "/start":
-                asyncio.run(bot.send_message(chat_id=chat_id, text="Selamat datang! Silakan ketik: Nama, NIM, Kontak, dan Laporan Anda dalam SATU PESAN."))
-            else:
-                # Kirim langsung ke Admin
-                laporan = f"🚨 PENGADUAN BARU\nDari ID: {chat_id}\nIsi: {text}"
-                asyncio.run(bot.send_message(chat_id=ADMIN_ID, text=laporan))
-                asyncio.run(bot.send_message(chat_id=chat_id, text="Laporan Anda sudah terkirim ke Admin. Terima kasih!"))
+            if update.message and update.message.text:
+                chat_id = update.message.chat_id
+                pesan_user = update.message.text
                 
-        return 'OK', 200
-    return 'Bot Aktif', 200
+                # 2. Balas ke User
+                asyncio.run(bot.send_message(chat_id=chat_id, text="Laporan diterima! Sedang diteruskan ke Admin."))
+                
+                # 3. Teruskan ke Kamu (Admin)
+                if ADMIN_ID:
+                    info = f"🚨 LAPORAN BARU\nDari: {chat_id}\nIsi: {pesan_user}"
+                    asyncio.run(bot.send_message(chat_id=ADMIN_ID, text=info))
+            
+            return 'OK', 200
+        except Exception as e:
+            return str(e), 500
+    return 'Bot UNUA Aktif!', 200
