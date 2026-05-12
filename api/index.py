@@ -3,6 +3,8 @@ from flask import Flask, request
 from telegram import Update, Bot
 
 app = Flask(__name__)
+
+# Mengambil data dari Environment Variables Vercel
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 ADMIN_ID = os.getenv("ADMIN_ID")
 
@@ -10,24 +12,34 @@ ADMIN_ID = os.getenv("ADMIN_ID")
 def index():
     if request.method == 'POST':
         try:
-            # 1. Terima data dari Telegram
-            data = request.get_json(force=True)
+            update_json = request.get_json(force=True)
             bot = Bot(token=TOKEN)
-            update = Update.de_json(data, bot)
+            update = Update.de_json(update_json, bot)
             
             if update.message and update.message.text:
-                chat_id = update.message.chat_id
-                pesan_user = update.message.text
+                user_text = update.message.text
+                user_name = update.message.from_user.first_name
+                user_id = update.message.chat_id
                 
-                # 2. Balas ke User
-                asyncio.run(bot.send_message(chat_id=chat_id, text="Laporan diterima! Sedang diteruskan ke Admin."))
-                
-                # 3. Teruskan ke Kamu (Admin)
-                if ADMIN_ID:
-                    info = f"🚨 LAPORAN BARU\nDari: {chat_id}\nIsi: {pesan_user}"
-                    asyncio.run(bot.send_message(chat_id=ADMIN_ID, text=info))
+                if user_text == "/start":
+                    asyncio.run(bot.send_message(chat_id=user_id, text="Halo! Silakan ketik laporan pengaduan Anda di sini."))
+                else:
+                    # --- BAGIAN PENGIRIMAN KE ADMIN ---
+                    pesan_untuk_admin = (
+                        f"🚨 *ADA PENGADUAN BARU*\n\n"
+                        f"👤 Dari: {user_name} ({user_id})\n"
+                        f"📝 Laporan: {user_text}"
+                    )
+                    
+                    # Kirim ke Admin
+                    asyncio.run(bot.send_message(chat_id=ADMIN_ID, text=pesan_untuk_admin, parse_mode="Markdown"))
+                    
+                    # Balas ke User bahwa laporan terkirim
+                    asyncio.run(bot.send_message(chat_id=user_id, text="✅ Laporan Anda sudah terkirim ke petugas. Terima kasih!"))
             
             return 'OK', 200
         except Exception as e:
-            return str(e), 500
-    return 'Bot UNUA Aktif!', 200
+            print(f"Error: {e}")
+            return 'Error', 500
+            
+    return 'Bot Pengaduan Aktif', 200
