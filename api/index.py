@@ -1,64 +1,63 @@
-import os, asyncio
+import os
+import asyncio
 from flask import Flask, request
 from telegram import Update, Bot
 
 app = Flask(__name__)
 
-# Ambil data dari Environment Variables Vercel
+# Ambil data dari Environment Variables
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 ADMIN_ID = os.getenv("ADMIN_ID")
+
+# Inisialisasi Bot secara global
+bot = Bot(token=TOKEN)
+
+async def handle_message(update):
+    """Fungsi untuk memproses logika pesan"""
+    if update.message and update.message.text:
+        chat_id = update.message.chat_id
+        text = update.message.text
+        user = update.message.from_user
+
+        # 1. Perintah /start
+        if text == "/start":
+            msg = (
+                "📚 *Bot Pengaduan Perpustakaan UNUJA* 📚\n\n"
+                "Kirim laporan dengan format:\n"
+                "NAMA: \nNIM: \nKONTAK: \nJENIS: \nISI LAPORAN: "
+            )
+            await bot.send_message(chat_id=chat_id, text=msg, parse_mode="Markdown")
+        
+        # 2. Deteksi Format Laporan
+        elif "NAMA:" in text.upper() and "ISI" in text.upper():
+            # Balas ke User
+            await bot.send_message(chat_id=chat_id, text="✅ Laporan diterima oleh Admin.")
+            
+            # Teruskan ke Admin
+            if ADMIN_ID:
+                report = f"🚨 *PENGADUAN BARU*\n\n{text}\n\n👤 Dari: {user.first_name}"
+                await bot.send_message(chat_id=int(ADMIN_ID), text=report, parse_mode="Markdown")
+        
+        # 3. Pesan Lainnya
+        else:
+            await bot.send_message(chat_id=chat_id, text="⚠️ Gunakan format laporan atau ketik /start.")
 
 @app.route('/', methods=['POST', 'GET'])
 def index():
     if request.method == 'POST':
         try:
             update_json = request.get_json(force=True)
-            bot = Bot(token=TOKEN)
             update = Update.de_json(update_json, bot)
             
-            if update.message and update.message.text:
-                chat_id = update.message.chat_id
-                text = update.message.text
-                user = update.message.from_user
-
-                # Perintah Start
-                if text == "/start":
-                    welcome_msg = (
-                        "📚 *Bot Pengaduan Perpustakaan UNUJA* 📚\n\n"
-                        "Untuk mengirim laporan, silakan kirim *SATU PESAN* dengan format:\n"
-                        "---------------------------\n"
-                        "NAMA: \n"
-                        "NIM: \n"
-                        "KONTAK: \n"
-                        "JENIS: \n"
-                        "ISI LAPORAN: \n"
-                        "---------------------------\n"
-                        "Admin akan segera merespons laporan Anda."
-                    )
-                    asyncio.run(bot.send_message(chat_id=chat_id, text=welcome_msg, parse_mode="Markdown"))
-                
-                # Deteksi jika pesan mengandung format laporan
-                elif "NAMA:" in text.upper() and "ISI" in text.upper():
-                    # 1. Balas ke User
-                    asyncio.run(bot.send_message(chat_id=chat_id, text="✅ Laporan Anda telah diterima oleh Admin. Terima kasih!"))
-                    
-                    # 2. Teruskan ke Admin (Kamu)
-                    if ADMIN_ID:
-                        report_to_admin = (
-                            "🚨 *PENGADUAN BARU*\n\n"
-                            f"{text}\n\n"
-                            f"👤 *Dari:* {user.first_name} (@{user.username})\n"
-                            f"🆔 *Chat ID:* `{chat_id}`"
-                        )
-                        asyncio.run(bot.send_message(chat_id=int(ADMIN_ID), text=report_to_admin, parse_mode="Markdown"))
-                
-                # Jika user hanya chat biasa (bukan format laporan)
-                else:
-                    asyncio.run(bot.send_message(chat_id=chat_id, text="⚠️ Mohon gunakan format laporan yang benar atau ketik /start untuk melihat bantuan."))
-
+            # Menjalankan fungsi asinkron di dalam Flask secara aman
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(handle_message(update))
+            loop.close()
+            
             return 'OK', 200
         except Exception as e:
-            print(f"Error: {e}")
-            return 'Error', 500
+            print(f"Error detail: {e}")
+            return str(e), 500
             
-    return 'Bot Pengaduan Tanpa GSheet Aktif', 200
+    return 'Bot Pengaduan UNUJA Ready', 200
