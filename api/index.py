@@ -1,53 +1,42 @@
 import os
-import asyncio
+import telebot
 from flask import Flask, request
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
+# Ambil variabel dari Vercel
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 ADMIN_ID = os.getenv("ADMIN_ID")
 
+bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
-# 1. Fungsi saat user klik START
-async def start(update: Update, context):
-    pesan_sambutan = (
+# 1. Respon saat klik START
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    pesan = (
         "Selamat Datang di Bot Pengaduan UNUJA!\n\n"
         "Silahkan kirimkan laporan Anda langsung di sini dengan format.\n\n"
-        "NIM:\n\n"
-        "Nama:\n\n"
-        "Kontak (Telegram/WhatsApp):\n\n"
-        "Isi Pengaduan:\n\n"
+        "NIM:\n"
+        "Nama:\n"
+        "Kontak (Telegram/WhatsApp):\n"
+        "Isi Pengaduan:\n"
     )
-    await update.message.reply_text(pesan_sambutan)
+    bot.reply_to(message, pesan)
 
-# 2. Fungsi saat user kirim LAPORAN (Pesan teks biasa)
-async def handle_message(update: Update, context):
-    user_text = update.message.text
-    user_info = update.effective_user
-    
+# 2. Respon saat kirim LAPORAN
+@bot.message_handler(func=lambda message: True)
+def handle_all_messages(message):
     # Kirim ke Admin
-    await context.bot.send_message(
-        chat_id=ADMIN_ID,
-        text=f"Laporan Baru!\nDari: {user_info.first_name} (@{user_info.username})\nIsi: {user_text}"
+    bot.send_message(
+        ADMIN_ID, 
+        f"Laporan Baru!\nDari: {message.from_user.first_name} (@{message.from_user.username})\nIsi: {message.text}"
     )
     # Balasan ke User
-    await update.message.reply_text("Laporan Anda telah diteruskan ke Admin. Terima kasih telah berkontribusi untuk kemajuan Perpustakaan UNUJA!")
+    bot.reply_to(message, "Laporan Anda telah diteruskan ke Admin. Terima kasih telah berkontribusi untuk kemajuan Perpustakaan UNUJA!")
 
 @app.route('/', methods=['POST', 'GET'])
-def main():
+def webhook():
     if request.method == 'POST':
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        
-        application = Application.builder().token(TOKEN).build()
-        
-        # Tambahkan perintah /start
-        application.add_handler(CommandHandler("start", start))
-        # Tambahkan penanganan pesan teks biasa (Laporan)
-        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-        
-        update = Update.de_json(request.get_json(force=True), application.bot)
-        loop.run_until_complete(application.process_update(update))
+        update = telebot.types.Update.de_json(request.stream.read().decode("utf-8"))
+        bot.process_new_updates([update])
         return "OK", 200
-    return "Bot Pengaduan UNUJA Ready"
+    return "Bot Pengaduan UNUJA Aktif", 200
